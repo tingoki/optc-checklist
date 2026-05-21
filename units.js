@@ -540,7 +540,6 @@ const UNITS = [
   { id: "st0718", name: "Hawk Eyes Mihawk", r: "Standard", t: "INT", is_plus: false, base_id: null },
   { id: "st0669", name: "Sabo", r: "Standard", t: "PSY", is_plus: false, base_id: null },
   { id: "st0649", name: "Marco the Phoenix", r: "Standard", t: "QCK", is_plus: false, base_id: null },
-  { id: "st0578", name: "Monkey D. Luffy", r: "Standard", t: "STR", is_plus: false, base_id: null },
   { id: "st0562", name: "Portgas D. Ace", r: "Standard", t: "DEX", is_plus: false, base_id: null },
   { id: "st0530", name: "Shanks", r: "Standard", t: "PSY", is_plus: false, base_id: null },
   { id: "st0459", name: "Sengoku the Buddha", r: "Standard", t: "PSY", is_plus: false, base_id: null },
