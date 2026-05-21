@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OPTC Checklist</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .btn-toggle-active {
+      background: var(--accent) !important;
+      color: #0f172a !important;
+      font-weight: 700 !important;
+      border-color: var(--accent) !important;
+    }
+  </style>
+</head>
+<body>
+
+<script src="units.js"></script>
+
+<div id="topbar">
+  <div id="logo">OPTC <span>Checklist</span></div>
+  <div id="topbar-right">
+    <button class="btn" onclick="openExport()">Export</button>
+    <button class="btn btn-accent" onclick="openImport()">Import</button>
+  </div>
+</div>
+
+<div id="toolbar">
+  <button class="btn" onclick="selectAll()">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    Select All
+  </button>
+  <button class="btn btn-ghost" onclick="resetAll()">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    Reset
+  </button>
+  <div class="sep" style="height: 20px;"></div>
+  <button class="btn" id="evolution-toggle-btn" onclick="toggleEvolutionDisplayMode()">
+    Show Base 6★ Only
+  </button>
+</div>
+
+<div id="filter-row">
+  <input class="search-box" id="search" type="text" placeholder="Search units…" oninput="applyFilters()">
+  <div class="sep"></div>
+  <button class="filter-btn on" data-f="all"       onclick="setFilter(this)">All</button>
+  <button class="filter-btn"    data-f="collected" onclick="setFilter(this)">Collected</button>
+  <button class="filter-btn"    data-f="missing"   onclick="setFilter(this)">Missing</button>
+  <div class="sep"></div>
+  <button class="filter-btn"    data-f="Super Sugo"   onclick="setFilter(this)">Super</button>
+  <button class="filter-btn"    data-f="Anniversary Sugo"  onclick="setFilter(this)">Anni</button>
+  <button class="filter-btn"    data-f="Rumble Sugo"       onclick="setFilter(this)">Rumble</button>
+  <button class="filter-btn"    data-f="Treasure Map" onclick="setFilter(this)">TM</button>
+  <button class="filter-btn"    data-f="Kizuna Sugo"       onclick="setFilter(this)">Kizuna</button>
+  <button class="filter-btn"    data-f="Standard"     onclick="setFilter(this)">Standard</button>
+</div>
+
+<div id="stats-strip">
+  <div class="stat-item">
+    <b id="n-checked">0</b> / <b class="dim" id="n-total">0</b>
+    <span>collected</span>
+  </div>
+  <div id="progress-track"><div id="progress-fill"></div></div>
+  <div class="stat-item"><b id="pct">0%</b></div>
+</div>
+
+<div id="content"></div>
+<div id="empty">No units match your filters.</div>
+
+<div id="toast"></div>
+
+<div class="overlay" id="ov-export">
+  <div class="dialog">
+    <h3>Export Checklist</h3>
+    <p>Copy this string to save or share your checklist data.</p>
+    <textarea id="ta-export" readonly></textarea>
+    <div class="dialog-footer">
+      <button class="btn" onclick="closeOverlays()">Close</button>
+      <button class="btn btn-accent" onclick="doCopy()">Copy String</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ov-import">
+  <div class="dialog">
+    <h3>Import Checklist</h3>
+    <p>Paste an export string below. This will overwrite your current progress.</p>
+    <textarea id="ta-import" placeholder="Paste string here…"></textarea>
+    <div class="dialog-footer">
+      <button class="btn" onclick="closeOverlays()">Cancel</button>
+      <button class="btn btn-accent" onclick="doImport()">Import Data</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY = "optc_v4";
+let checked = new Set();
+let activeFilter = "all";
+
+let preferPlusEvolutions = true; 
+
+function persist() { localStorage.setItem(KEY, JSON.stringify([...checked])); }
+function hydrate() {
+  try { const s = localStorage.getItem(KEY); if (s) checked = new Set(JSON.parse(s)); }
+  catch { checked = new Set(); }
+}
+
+function toggleEvolutionDisplayMode() {
+  preferPlusEvolutions = !preferPlusEvolutions;
+  const btn = document.getElementById("evolution-toggle-btn");
+  if (preferPlusEvolutions) {
+    btn.textContent = "Show Base 6★ Only";
+    btn.classList.remove("btn-toggle-active");
+  } else {
+    btn.textContent = "Displaying Base 6★";
+    btn.classList.add("btn-toggle-active");
+  }
+  build();
+}
+
+function getVisibleUnitsList() {
+  const basesWithPlus = new Set(
+    UNITS.filter(u => u.is_plus && u.base_id).map(u => String(u.base_id))
+  );
+
+  if (preferPlusEvolutions) {
+    return UNITS.filter(u => u.is_plus || !basesWithPlus.has(String(u.id)));
+  } else {
+    return UNITS.filter(u => !u.is_plus);
+  }
+}
+
+function build() {
+  const root = document.getElementById("content");
+  root.innerHTML = "";
+  
+  const activeDisplayUnits = getVisibleUnitsList();
+
+  for (const sec of SECTIONS) {
+    const units = activeDisplayUnits.filter(u => u.r === sec.r);
+    if (units.length === 0) continue; 
+    
+    const wrap = document.createElement("div");
+    wrap.className = "section";
+    wrap.dataset.r = sec.r;
+    wrap.innerHTML = `
+      <div class="section-head">
+        <span class="section-name">${sec.label}</span>
+        <span class="section-tally" id="tally-${sec.r.replace(/\s+/g, '')}"></span>
+      </div>
+      <div class="unit-grid"></div>
+    `;
+    root.appendChild(wrap);
+    const grid = wrap.querySelector(".unit-grid");
+    
+    for (const u of units) {
+      const match = u.id.match(/\d+/);
+      const iconNumber = match ? match[0] : "0000";
+      const iconPath = `icons/${iconNumber}.png`;
+
+      const el = document.createElement("div");
+      el.className = "tile" + (checked.has(u.id) ? " on" : "");
+      el.dataset.id = u.id;
+      el.dataset.r  = u.r;
+      el.dataset.n  = u.name.toLowerCase();
+      
+      const suffixMarker = u.is_plus ? " <span style='color:var(--accent); font-weight:bold;'>6+</span>" : "";
+
+      el.innerHTML = `
+        <div class="tile-bg ${u.t}">
+          <img src="${iconPath}" alt="${u.name}" loading="lazy" onerror="handleMissingIcon(this, '${u.t}')">
+        </div>
+        <div class="tile-check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="tile-name">${u.name}${suffixMarker}</div>
+      `;
+      el.addEventListener("click", () => toggle(u, el));
+      grid.appendChild(el);
+    }
+  }
+  refreshStats();
+  applyFilters();
+}
+
+function handleMissingIcon(imgElement, type) {
+  const container = imgElement.parentElement;
+  container.innerHTML = `<span class="type-badge ${type}">${type}</span>`;
+}
+
+function toggle(unit, el) {
+  const isChecking = !checked.has(unit.id);
+  
+  const setUnitState = (targetId, shouldCheck) => {
+    if (!targetId) return;
+    if (shouldCheck) checked.add(targetId);
+    else checked.delete(targetId);
+    
+    const tile = document.querySelector(`.tile[data-id="${targetId}"]`);
+    if (tile) {
+      if (shouldCheck) tile.classList.add("on");
+      else tile.classList.remove("on");
+    }
+  };
+
+  setUnitState(unit.id, isChecking);
+
+  if (unit.is_plus) {
+    setUnitState(unit.base_id, isChecking);
+  } else {
+    const evolutionForm = UNITS.find(u => u.base_id === unit.id);
+    if (evolutionForm) {
+      setUnitState(evolutionForm.id, isChecking);
+    }
+  }
+
+  persist();
+  refreshStats();
+}
+
+function refreshStats() {
+  const activeDisplayUnits = getVisibleUnitsList();
+  const total = activeDisplayUnits.length;
+  const n = activeDisplayUnits.filter(u => checked.has(u.id)).length;
+  const pct = total ? Math.round(n / total * 100) : 0;
+  
+  document.getElementById("n-checked").textContent = n;
+  document.getElementById("n-total").textContent   = total;
+  document.getElementById("progress-fill").style.width = pct + "%";
+  document.getElementById("pct").textContent = pct + "%";
+  
+  for (const sec of SECTIONS) {
+    const el = document.getElementById("tally-" + sec.r.replace(/\s+/g, ''));
+    if (!el) continue;
+    const all = activeDisplayUnits.filter(u => u.r === sec.r);
+    const c   = all.filter(u => checked.has(u.id)).length;
+    el.textContent = `${c} / ${all.length}`;
+  }
+}
+
+function setFilter(btn) {
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("on"));
+  btn.classList.add("on");
+  activeFilter = btn.dataset.f;
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById("search").value.toLowerCase();
+  let any = false;
+  document.querySelectorAll(".tile").forEach(el => {
+    const id = el.dataset.id, r = el.dataset.r, n = el.dataset.n;
+    let show = true;
+    if      (activeFilter === "collected") show = checked.has(id);
+    else if (activeFilter === "missing")   show = !checked.has(id);
+    else if (activeFilter !== "all")       show = r === activeFilter;
+    
+    if (show && q) show = n.includes(q);
+    el.style.display = show ? "" : "none";
+    if (show) any = true;
+  });
+  for (const sec of SECTIONS) {
+    const wrap = document.querySelector(`.section[data-r="${sec.r}"]`);
+    if (!wrap) continue;
+    const visible = [...wrap.querySelectorAll(".tile")].some(e => e.style.display !== "none");
+    wrap.style.display = visible ? "" : "none";
+  }
+  document.getElementById("empty").style.display = any ? "none" : "block";
+}
+
+function selectAll() {
+  const activeDisplayUnits = getVisibleUnitsList();
+  activeDisplayUnits.forEach(u => {
+    checked.add(u.id);
+    if (u.base_id) checked.add(u.base_id);
+    const evo = UNITS.find(ev => ev.base_id === u.id);
+    if (evo) checked.add(evo.id);
+  });
+  document.querySelectorAll(".tile").forEach(el => el.classList.add("on"));
+  persist(); refreshStats();
+  toast("All active units checked");
+}
+
+function resetAll() {
+  if (!confirm("Clear whole checklist?")) return;
+  checked.clear();
+  document.querySelectorAll(".tile").forEach(el => el.classList.remove("on"));
+  persist(); refreshStats();
+  toast("Checklist cleared");
+}
+
+function openExport() {
+  document.getElementById("ta-export").value = btoa(JSON.stringify([...checked]));
+  document.getElementById("ov-export").classList.add("open");
+}
+function doCopy() {
+  const ta = document.getElementById("ta-export");
+  ta.select(); document.execCommand("copy");
+  closeOverlays(); toast("Data string copied");
+}
+function openImport() {
+  document.getElementById("ta-import").value = "";
+  document.getElementById("ov-import").classList.add("open");
+}
+function doImport() {
+  try {
+    const data = JSON.parse(atob(document.getElementById("ta-import").value.trim()));
+    if (!Array.isArray(data)) throw 0;
+    checked = new Set(data);
+    persist(); build(); closeOverlays();
+    toast("Data imported successfully");
+  } catch { toast("Error: Invalid import string"); }
+}
+function closeOverlays() {
+  document.querySelectorAll(".overlay").forEach(o => o.classList.remove("open"));
+}
+document.querySelectorAll(".overlay").forEach(o => {
+  o.addEventListener("click", e => { if (e.target === o) closeOverlays(); });
+});
+
+let toastTid;
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTid);
+  toastTid = setTimeout(() => el.classList.remove("show"), 2000);
+}
+
+hydrate();
+build();
+</script>
+</body>
+</html>
