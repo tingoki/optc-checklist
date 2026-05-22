@@ -86,7 +86,7 @@ const UNITS = [
   { id: "an4391", name: "Dragon & Ivankov & Kuma", r: "Anniversary Sugo", t: "DEX", is_plus: false, base_id: null },
   { id: "an4371", name: "Roronoa Zoro", r: "Anniversary Sugo", t: "QCK", is_plus: true, base_id: "an3755" },
   { id: "an4367", name: "Nami from ONE PIECE magazine", r: "Anniversary Sugo", t: "PSY", is_plus: false, base_id: null },
-  { id: "an4329", name: "S", r: "Anniversary Sugo", t: "STR", is_plus: false, base_id: null },
+  { id: "an4329", name: "S-Snake", r: "Anniversary Sugo", t: "STR", is_plus: false, base_id: null },
   { id: "an4323", name: "Zoro & Kaku", r: "Anniversary Sugo", t: "STR", is_plus: false, base_id: null },
   { id: "an4322", name: "Luffy & Lucci", r: "Anniversary Sugo", t: "STR", is_plus: false, base_id: null },
   { id: "an4294", name: "Hancock & Nami & Robin", r: "Anniversary Sugo", t: "INT", is_plus: true, base_id: "an3613" },
