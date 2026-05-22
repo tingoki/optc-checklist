@@ -5,12 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OPTC Checklist</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     .btn-toggle-active {
       background: var(--accent) !important;
       color: #0f172a !important;
       font-weight: 700 !important;
       border-color: var(--accent) !important;
+    }
+
+    #ov-genimg .dialog { max-width: 520px; }
+    #genimg-preview-wrap {
+      background: #0f172a;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 8px;
+      overflow: hidden;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    #genimg-preview {
+      max-width: 100%;
+      display: block;
+    }
+    #genimg-spinner {
+      color: var(--accent, #facc15);
+      font-size: 13px;
+      opacity: .7;
+      padding: 32px;
     }
   </style>
 </head>
@@ -38,6 +62,11 @@
   <div class="sep" style="height: 20px;"></div>
   <button class="btn" id="evolution-toggle-btn" onclick="toggleEvolutionDisplayMode()">
     Show Base 6★ Only
+  </button>
+  <div class="sep" style="height: 20px;"></div>
+  <button class="btn btn-accent" onclick="openGenImg()">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    Generate Image
   </button>
 </div>
 
@@ -67,6 +96,21 @@
 
 <div id="content"></div>
 <div id="empty">No units match your filters.</div>
+
+<div class="overlay" id="ov-genimg">
+  <div class="dialog">
+    <h3>Generate Image</h3>
+    <p>A snapshot of your current visible checklist. Filters &amp; search apply.</p>
+    <div id="genimg-preview-wrap">
+      <span id="genimg-spinner">Rendering…</span>
+      <img id="genimg-preview" style="display:none;" alt="Checklist snapshot">
+    </div>
+    <div class="dialog-footer">
+      <button class="btn" onclick="closeOverlays()">Close</button>
+      <button class="btn btn-accent" id="genimg-dl-btn" onclick="downloadGenImg()" disabled>Download PNG</button>
+    </div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
@@ -329,6 +373,94 @@ function toast(msg) {
   el.classList.add("show");
   clearTimeout(toastTid);
   toastTid = setTimeout(() => el.classList.remove("show"), 2000);
+}
+
+// ── Generate Image ──────────────────────────────────────────────────────────
+let genImgDataUrl = null;
+
+async function openGenImg() {
+  genImgDataUrl = null;
+  const preview = document.getElementById("genimg-preview");
+  const spinner = document.getElementById("genimg-spinner");
+  const dlBtn   = document.getElementById("genimg-dl-btn");
+  preview.style.display = "none";
+  spinner.style.display = "block";
+  dlBtn.disabled = true;
+  document.getElementById("ov-genimg").classList.add("open");
+
+  // Build a self-contained snapshot node ──────────────────────────────────
+  const source = document.getElementById("content");
+
+  // Temporarily show ALL sections so html2canvas can measure them,
+  // then we'll capture only what's actually visible on screen.
+  const snapshot = source.cloneNode(true);
+  snapshot.style.cssText = `
+    position: fixed; top: -9999px; left: 0;
+    width: ${source.offsetWidth}px;
+    background: var(--bg, #0f172a);
+    padding: 16px;
+  `;
+
+  // Remove tiles that are currently hidden (filtered out)
+  snapshot.querySelectorAll(".tile").forEach(tile => {
+    const live = source.querySelector(`.tile[data-id="${tile.dataset.id}"]`);
+    if (live && live.style.display === "none") tile.remove();
+  });
+  snapshot.querySelectorAll(".section").forEach(sec => {
+    const anyVisible = sec.querySelectorAll(".tile").length > 0;
+    if (!anyVisible) sec.remove();
+  });
+
+  // Add a title banner
+  const banner = document.createElement("div");
+  const checkedCount = document.getElementById("n-checked").textContent;
+  const totalCount   = document.getElementById("n-total").textContent;
+  const pctText      = document.getElementById("pct").textContent;
+  banner.style.cssText = `
+    font-family: inherit;
+    color: #f8fafc;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  `;
+  banner.innerHTML = `
+    <span>OPTC Checklist</span>
+    <span style="font-size:13px;font-weight:400;opacity:.6;">${checkedCount} / ${totalCount} collected &nbsp;·&nbsp; ${pctText}</span>
+  `;
+  snapshot.insertBefore(banner, snapshot.firstChild);
+
+  document.body.appendChild(snapshot);
+
+  try {
+    const canvas = await html2canvas(snapshot, {
+      backgroundColor: "#0f172a",
+      useCORS: true,
+      allowTaint: true,
+      scale: 2,
+      logging: false,
+    });
+    genImgDataUrl = canvas.toDataURL("image/png");
+    preview.src = genImgDataUrl;
+    preview.style.display = "block";
+    spinner.style.display = "none";
+    dlBtn.disabled = false;
+  } catch (err) {
+    spinner.textContent = "Render failed. Try again.";
+    console.error(err);
+  } finally {
+    document.body.removeChild(snapshot);
+  }
+}
+
+function downloadGenImg() {
+  if (!genImgDataUrl) return;
+  const a = document.createElement("a");
+  a.href = genImgDataUrl;
+  a.download = "optc-checklist.png";
+  a.click();
 }
 
 hydrate();
