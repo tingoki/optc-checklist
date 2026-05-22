@@ -74,6 +74,8 @@ const UNITS = [
   { id: "ss3177", name: "Gol D. Roger", r: "Super Sugo", t: "PSY", is_plus: false, base_id: null },
   { id: "ss3175", name: "Kozuki Oden", r: "Super Sugo", t: "STR", is_plus: false, base_id: null },
 
+  { id: "an4529", name: "St. Peter & St. Warcury", r: "Anniversary Sugo", t: "TAG", is_plus: false, base_id: null },
+  { id: "an4529", name: "St. Mars & St. Saturn", r: "Anniversary Sugo", t: "TAG", is_plus: false, base_id: null },
   { id: "an4529", name: "Zoro VS St. Nusjuro", r: "Anniversary Sugo", t: "VS", is_plus: false, base_id: null },
   { id: "an4522", name: "Blackbeard & Kuzan", r: "Anniversary Sugo", t: "STR", is_plus: false, base_id: null },
   { id: "an4521", name: "Garp & Coby", r: "Anniversary Sugo", t: "STR", is_plus: false, base_id: null },
@@ -106,6 +108,7 @@ const UNITS = [
   { id: "an3745", name: "Kin'emon & Denjiro & Ashura Doji & Dogstorm", r: "Anniversary Sugo", t: "STR", is_plus: false, base_id: null },
   { id: "an3613", name: "Hancock & Nami & Robin", r: "Anniversary Sugo", t: "STR", is_plus: false, base_id: null },
 
+  { id: "pr4579", name: "Kami Eneru", r: "Rumble Sugo", t: "PSY", is_plus: true, base_id: "pr3245" },
   { id: "pr4556", name: "Portgas D. Ace", r: "Rumble Sugo", t: "DEX", is_plus: false, base_id: null },
   { id: "pr4543", name: "Kaku", r: "Rumble Sugo", t: "INT", is_plus: false, base_id: null },
   { id: "pr4528", name: "Prince Grus", r: "Rumble Sugo", t: "DEX", is_plus: false, base_id: null },
@@ -113,7 +116,7 @@ const UNITS = [
   { id: "pr4498", name: "Stussy", r: "Rumble Sugo", t: "STR", is_plus: false, base_id: null },
   { id: "pr4482", name: "Master Caesar Clown", r: "Rumble Sugo", t: "DEX", is_plus: false, base_id: null },
   { id: "pr4466", name: "San Juan Wolf", r: "Rumble Sugo", t: "INT", is_plus: false, base_id: null },
-  { id: "pr4449", name: "S", r: "Rumble Sugo", t: "QCK", is_plus: false, base_id: null },
+  { id: "pr4449", name: "S-Snake", r: "Rumble Sugo", t: "QCK", is_plus: false, base_id: null },
   { id: "pr4431", name: "Jinbe", r: "Rumble Sugo", t: "PSY", is_plus: false, base_id: null },
   { id: "pr4424", name: "Borsalino", r: "Rumble Sugo", t: "DEX", is_plus: true, base_id: "pr3411" },
   { id: "pr4343", name: "Pica", r: "Rumble Sugo", t: "STR", is_plus: false, base_id: null },
