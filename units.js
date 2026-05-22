@@ -74,8 +74,8 @@ const UNITS = [
   { id: "ss3177", name: "Gol D. Roger", r: "Super Sugo", t: "PSY", is_plus: false, base_id: null },
   { id: "ss3175", name: "Kozuki Oden", r: "Super Sugo", t: "STR", is_plus: false, base_id: null },
 
-  { id: "an4529", name: "St. Peter & St. Warcury", r: "Anniversary Sugo", t: "TAG", is_plus: false, base_id: null },
-  { id: "an4529", name: "St. Mars & St. Saturn", r: "Anniversary Sugo", t: "TAG", is_plus: false, base_id: null },
+  { id: "an4577", name: "St. Peter & St. Warcury", r: "Anniversary Sugo", t: "TAG", is_plus: false, base_id: null },
+  { id: "an4576", name: "St. Mars & St. Saturn", r: "Anniversary Sugo", t: "TAG", is_plus: false, base_id: null },
   { id: "an4529", name: "Zoro VS St. Nusjuro", r: "Anniversary Sugo", t: "VS", is_plus: false, base_id: null },
   { id: "an4522", name: "Blackbeard & Kuzan", r: "Anniversary Sugo", t: "STR", is_plus: false, base_id: null },
   { id: "an4521", name: "Garp & Coby", r: "Anniversary Sugo", t: "STR", is_plus: false, base_id: null },
